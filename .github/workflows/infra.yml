@@ -1,0 +1,99 @@
+name: Infra — Terraform (validate, plan, apply)
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths: [ 'infra/**' ]
+  push:
+    branches: [ main ]
+    paths: [ 'infra/**' ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  # ── QUALITY GATE: format check, validate, and native module tests ──
+  # Runs on every PR and push. No Azure credentials needed (mock_provider).
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Format check (all infra)
+        run: terraform fmt -check -recursive
+        working-directory: infra
+
+      - name: Init module (no backend)
+        run: terraform init -backend=false
+        working-directory: infra/modules/webapp
+
+      - name: Validate module
+        run: terraform validate
+        working-directory: infra/modules/webapp
+
+      # ── THE TERRAFORM TEST GATE — runs the .tftest.hcl files ──
+      - name: Terraform test (module)
+        run: terraform test
+        working-directory: infra/modules/webapp
+
+  # On a PR: plan all three environments (only after validate passes).
+  plan:
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [ dev, staging, prod ]
+    defaults:
+      run:
+        working-directory: infra/environments/${{ matrix.env }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform plan -no-color
+
+  # On merge: apply dev → staging → prod, each gated (only after validate passes).
+  apply-dev:
+    if: github.event_name == 'push'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults: { run: { working-directory: infra/environments/dev } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform apply -auto-approve
+
+  apply-staging:
+    if: github.event_name == 'push'
+    needs: apply-dev
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults: { run: { working-directory: infra/environments/staging } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform apply -auto-approve
+
+  apply-prod:
+    if: github.event_name == 'push'
+    needs: apply-staging
+    runs-on: ubuntu-latest
+    environment: production
+    defaults: { run: { working-directory: infra/environments/prod } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform apply -auto-approve

@@ -1,0 +1,60 @@
+name: App — Build, Test & Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'src/**', 'tests/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'src/**', 'tests/**' ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # ── THE TEST GATE — broken code can't get past here ──
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Publish
+        run: dotnet publish src/BookApp --configuration Release --no-build -o publish
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: published-app
+          path: publish
+
+  deploy-dev:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: published-app
+          path: publish
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'book-app-dev-amangena-2026'
+          package: publish
