@@ -1,4 +1,4 @@
-// BookApp Platform — deployed via GitHub Actions CI/CD
+// BookApp Platform — deployed via GitHub Actions CI/CD-Staging
 
 using BookApp.Services;
 
