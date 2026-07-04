@@ -1,0 +1,6 @@
+{
+  "name": "platform-dev",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:AMangena/book-app-platform:environment:dev",
+  "audiences": ["api://AzureADTokenExchange"]
+}

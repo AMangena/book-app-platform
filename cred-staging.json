@@ -1,0 +1,6 @@
+{
+  "name": "platform-staging",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:AMangena/book-app-platform:environment:staging",
+  "audiences": ["api://AzureADTokenExchange"]
+}

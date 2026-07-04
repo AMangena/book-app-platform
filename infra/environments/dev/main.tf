@@ -16,7 +16,7 @@ provider "azurerm" {
 
 # Same module as the other environments — only the inputs differ.
 module "webapp" {
-  source = "../../modules/webapp"
+  source              = "../../modules/webapp"
   resource_group_name = var.resource_group_name
   plan_name           = var.plan_name
   app_name            = var.app_name
