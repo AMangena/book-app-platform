@@ -1,3 +1,5 @@
+// BookApp Platform — deployed via GitHub Actions CI/CD
+
 using BookApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
