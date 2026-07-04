@@ -1,16 +1,28 @@
 @page
 @model BookApp.Pages.IndexModel
-@{ ViewData["Title"] = "My Book Library"; }
+@{
+    ViewData["Title"] = " Book Library";
+}
 <div class="container">
     <h1>📚 My Book Library</h1>
     <p class="env">Environment: <strong>@(Environment.GetEnvironmentVariable("APP_ENVIRONMENT") ?? "local")</strong></p>
     <table>
-        <thead><tr><th>Title</th><th>Author</th><th>Year</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Year</th>
+            </tr>
+        </thead>
         <tbody>
-        @foreach (var b in Model.Books)
-        {
-            <tr><td>@b.Title</td><td>@b.Author</td><td>@b.Year</td></tr>
-        }
+            @foreach (var b in Model.Books)
+            {
+                <tr>
+                    <td>@b.Title</td>
+                    <td>@b.Author</td>
+                    <td>@b.Year</td>
+                </tr>
+            }
         </tbody>
     </table>
 </div>
